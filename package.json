@@ -15,20 +15,21 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "create-particle",
-      "title": "Create particle",
+      "name": "create",
+      "title": "Create",
       "description": "",
       "mode": "view"
     },
     {
-      "name": "view-particles",
-      "title": "View particles",
+      "name": "observe",
+      "title": "Observe",
       "description": "",
       "mode": "view"
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.49.2"
+    "@raycast/api": "^1.49.2",
+    "@supabase/supabase-js": "^2.15.0"
   },
   "devDependencies": {
     "@raycast/eslint-config": "1.0.5",
