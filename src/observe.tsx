@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { Action, ActionPanel, Alert, Color, Icon, List, Toast, confirmAlert, showToast } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Alert,
+  Color,
+  Icon,
+  List,
+  Toast,
+  confirmAlert,
+  showToast,
+  useNavigation,
+} from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
 
@@ -34,7 +45,8 @@ function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }
 
 function Particles() {
   const [type, setType] = useState<string>(DEFAULT_CATEGORY);
-  const { data, isLoading, mutate } = useDB<Particle[]>("particle");
+  const { data, isLoading, mutate } = useDB<Particle[]>("particle", { orderBy: "updated_at", ascending: false });
+  const { push } = useNavigation();
 
   const typeParticles = type === DEFAULT_CATEGORY ? data : data?.filter((particle) => particle.type === parseInt(type));
 
@@ -82,7 +94,7 @@ function Particles() {
                   <Action
                     icon={Icon.TwoPeople}
                     title="Toggle Publish"
-                    shortcut={{ modifiers: ["ctrl"], key: "a" }}
+                    shortcut={{ modifiers: ["cmd"], key: "t" }}
                     onAction={async () => {
                       const toast = await showToast({
                         style: Toast.Style.Animated,
@@ -105,7 +117,7 @@ function Particles() {
                   <Action
                     icon={Icon.Tray}
                     title="Toggle Archive"
-                    shortcut={{ modifiers: ["ctrl"], key: "s" }}
+                    shortcut={{ modifiers: ["cmd"], key: "h" }}
                     onAction={async () => {
                       const toast = await showToast({
                         style: Toast.Style.Animated,
@@ -124,6 +136,12 @@ function Particles() {
                         toast.title = error?.message || "Could not respawn particle";
                       }
                     }}
+                  />
+                  <Action
+                    icon={Icon.Pencil}
+                    title="View Particle"
+                    shortcut={{ modifiers: ["cmd"], key: "d" }}
+                    onAction={() => console.log("View")}
                   />
                   <ActionPanel.Section />
                   <Action

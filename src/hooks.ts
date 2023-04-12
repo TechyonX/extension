@@ -47,14 +47,15 @@ export function useAuth() {
   return { login, logout, data };
 }
 
-export function useDB<T>(relation: string) {
+export function useDB<T>(relation: string, options?: any) {
+  const { orderBy, ascending } = options || { orderBy: "id", ascending: true };
   const [data, setData] = useState<T>();
   const [error, setError] = useState<PostgrestError>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   async function fetch() {
     setIsLoading(true);
-    const { data, error } = await supabase.from(relation).select().order("updated_at", { ascending: false });
+    const { data, error } = await supabase.from(relation).select().order(orderBy, { ascending });
 
     if (data) setData(data as T);
     if (error) setError(error);

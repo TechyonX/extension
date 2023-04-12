@@ -7,21 +7,18 @@ export type Type = {
   emoji: string;
 };
 
-export type Particle = {
-  id: string;
-  title?: string;
-  content: string;
-  is_public: boolean;
-  is_archived: boolean;
-  type: TypeID;
-  description?: string;
-  created_at: string;
-};
-
 export type ParticleValues = {
   description?: string;
   content: string;
   type: string;
   is_public: boolean;
+  is_archived: boolean;
   title?: string;
+};
+
+export type Particle = Omit<ParticleValues, "type"> & {
+  id: string;
+  type: TypeID;
+  created_at: string;
+  updated_at: string;
 };
