@@ -52,25 +52,24 @@ export function useDB<T>(relation: string) {
   const [error, setError] = useState<PostgrestError>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
+  async function fetch() {
     setIsLoading(true);
+    const { data, error } = await supabase.from(relation).select();
+
+    if (data) setData(data as T);
+    if (error) setError(error);
+    setIsLoading(false);
+  }
+
+  useEffect(() => {
     let ignore = false;
 
-    async function fetch() {
-      const { data, error } = await supabase.from(relation).select();
-
-      if (ignore) return;
-      if (data) setData(data as T);
-      if (error) setError(error);
-      return setIsLoading(false);
-    }
-
-    fetch();
+    if (!ignore) fetch();
 
     return () => {
       ignore = true;
     };
   }, [relation]);
 
-  return { data, error, isLoading };
+  return { data, error, isLoading, mutate: fetch };
 }

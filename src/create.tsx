@@ -52,11 +52,17 @@ function CreateForm() {
           description: "Image content summary goes",
         };
       } else {
-        const description = await unstable_AI.ask(`Summarize the following content: ${values.content}`);
-        const title = await unstable_AI.ask(
-          `Create a short, concise title for the following content: ${values.content}`
+        const description = await unstable_AI.ask(
+          `Summarize the following content, response should not contain newlines, quotes, trailing spaces etc: ${values.content}`
         );
-        values = { ...values, title, description };
+        const title = await unstable_AI.ask(
+          `Create a short, concise title for the following content, response should not contain newlines, quotes, trailing spaces etc: ${values.content}`
+        );
+        values = {
+          ...values,
+          title: title.replace(/\s+/g, " ").trim(),
+          description: description.replace(/\s+/g, " ").trim(),
+        };
       }
 
       const { error: postgrestError } = await supabase.from("particle").insert({ ...values, user_id: user?.id });

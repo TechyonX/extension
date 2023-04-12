@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Color, Icon, List } from "@raycast/api";
+import { Action, ActionPanel, Alert, Color, Icon, List, Toast, confirmAlert, showToast } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
 
+import { supabase } from "./client";
 import { useDB } from "./hooks";
 import { Particle, Type } from "./types";
 import { Login } from "./login";
@@ -33,7 +34,7 @@ function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }
 
 function Particles() {
   const [type, setType] = useState<string>(DEFAULT_CATEGORY);
-  const { data, isLoading } = useDB<Particle[]>("particle");
+  const { data, isLoading, mutate } = useDB<Particle[]>("particle");
 
   const typeParticles = type === DEFAULT_CATEGORY ? data : data?.filter((particle) => particle.type === parseInt(type));
 
@@ -51,7 +52,7 @@ function Particles() {
               key={particle.id}
               icon={{ value: getTypeIcon(particle.type, particle.content), tooltip: `#${particle.id}` }}
               id={particle.id}
-              title={particle.title || particle.content}
+              title={{ value: particle.title || particle.content, tooltip: particle.title }}
               subtitle={particle.description}
               accessories={[
                 {
@@ -74,6 +75,39 @@ function Particles() {
                   },
                 },
               ]}
+              actions={
+                <ActionPanel>
+                  <ActionPanel.Section />
+                  <Action
+                    title="Destroy Particle"
+                    shortcut={{ modifiers: ["ctrl"], key: "x" }}
+                    onAction={async () => {
+                      if (
+                        await confirmAlert({
+                          title: `Destroy Particle`,
+                          message:
+                            "The fate of the universe may depend on this particular particle you are about to destroy. Should we procedd?",
+                          primaryAction: { title: "Destroy", style: Alert.ActionStyle.Destructive },
+                        })
+                      ) {
+                        const toast = await showToast({
+                          style: Toast.Style.Animated,
+                          title: "Destroying particle...",
+                        });
+                        const { error } = await supabase.from("particle").delete().eq("id", particle.id);
+                        mutate();
+                        if (!error) {
+                          toast.style = Toast.Style.Success;
+                          toast.title = "Particle destroyed";
+                        } else {
+                          toast.style = Toast.Style.Failure;
+                          toast.title = error?.message || "Could not destroy particle";
+                        }
+                      }
+                    }}
+                  />
+                </ActionPanel>
+              }
             />
           ))}
       </List.Section>
