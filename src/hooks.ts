@@ -1,45 +1,14 @@
 import { useEffect, useState } from "react";
 import { Toast, showToast } from "@raycast/api";
-import { Session } from "@supabase/supabase-js";
+import { useCachedState } from "@raycast/utils";
+import { PostgrestError, Session } from "@supabase/supabase-js";
 import { supabase } from "./client";
 
-export function useSession() {
+export function useAuth() {
+  const [authenticated, setAuthenticated] = useCachedState<boolean>("authenticated");
   const [data, setData] = useState<Session>();
   const [error, setError] = useState<Error>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    setIsLoading(true);
-    let ignore = false;
-
-    async function fetch() {
-      const { data, error } = await supabase.auth.getSession();
-
-      if (ignore) return;
-      if (data) setData(data?.session || undefined);
-      if (error) setError(error);
-      return setIsLoading(false);
-    }
-
-    fetch();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  return {
-    isAuthenticated:
-      data === undefined && error === undefined ? false : data?.user?.aud === "authenticated" ? true : undefined,
-    session: data,
-    sessionError: error,
-    sessionLoading: isLoading,
-    sessionUpdate: setData,
-  };
-}
-
-export function useAuth() {
-  const { sessionUpdate, ...sessionData } = useSession();
 
   async function login(email: string, password: string) {
     const toast = await showToast({
@@ -50,10 +19,11 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (data.session && data.user) {
-      sessionUpdate(data.session);
+      setAuthenticated(true);
       toast.style = Toast.Style.Success;
       toast.title = "Signed in";
     } else {
+      setAuthenticated(false);
       toast.style = Toast.Style.Failure;
       toast.title = error?.message || "Invalid login credentials";
     }
@@ -68,7 +38,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signOut();
 
     if (!error) {
-      sessionUpdate(undefined);
+      setAuthenticated(false);
       toast.style = Toast.Style.Success;
       toast.title = "Signed out";
     } else {
@@ -77,12 +47,38 @@ export function useAuth() {
     }
   }
 
-  return { login, logout, ...sessionData };
+  useEffect(() => {
+    setIsLoading(true);
+    let ignore = false;
+
+    async function fetch() {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (ignore) return;
+      if (data?.session?.user?.aud === "authenticated") {
+        setData(data?.session || undefined);
+        setAuthenticated(true);
+      }
+      if (error) {
+        setError(error);
+        setAuthenticated(true);
+      }
+      return setIsLoading(false);
+    }
+
+    fetch();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  return { login, logout, authenticated, data, error, isLoading };
 }
 
 export function useDB<T>(relation: string) {
   const [data, setData] = useState<T>();
-  const [error, setError] = useState<Error>();
+  const [error, setError] = useState<PostgrestError>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -93,7 +89,7 @@ export function useDB<T>(relation: string) {
       const { data, error } = await supabase.from(relation).select();
 
       if (ignore) return;
-      if (data) setData(data);
+      if (data) setData(data as T);
       if (error) setError(error);
       return setIsLoading(false);
     }

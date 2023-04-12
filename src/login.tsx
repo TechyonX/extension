@@ -3,7 +3,7 @@ import { Action, ActionPanel, Form } from "@raycast/api";
 
 import { useAuth } from "./hooks";
 
-export function Login({ onSuccess }) {
+export function Login() {
   const [email, setEmail] = useState<string | undefined>();
   const [passwordError, setPasswordError] = useState<string | undefined>();
   const { login } = useAuth();
@@ -22,14 +22,13 @@ export function Login({ onSuccess }) {
 
   async function onSubmit(values: { email: string; password: string }) {
     await login(values.email, values.password);
-    onSuccess();
   }
 
   return (
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm onSubmit={onSubmit} />
+          <Action.SubmitForm title="Sign In" onSubmit={onSubmit} />
         </ActionPanel>
       }
     >
@@ -37,7 +36,6 @@ export function Login({ onSuccess }) {
         id="email"
         title="Email address"
         placeholder="Enter email address"
-        defaultValue="khasbilegt.ts@gmail.com"
         error={email}
         onChange={dropNameErrorIfNeeded}
         onBlur={(event) => {
@@ -51,7 +49,7 @@ export function Login({ onSuccess }) {
       <Form.PasswordField
         id="password"
         title="Password"
-        defaultValue="p455w0rd"
+        placeholder="Enter password"
         error={passwordError}
         onChange={dropPasswordErrorIfNeeded}
         onBlur={(event) => {

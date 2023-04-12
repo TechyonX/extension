@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Action, ActionPanel, Form, Toast, popToRoot, showToast } from "@raycast/api";
+import { Action, ActionPanel, Detail, Form, Toast, popToRoot, showToast } from "@raycast/api";
+import { useCachedState } from "@raycast/utils";
 
 import { supabase } from "./client";
 import { useDB } from "./hooks";
@@ -20,7 +21,7 @@ function FormContent({ type }: { type?: TypeName }) {
   }
 }
 
-export default function Create() {
+function CreateForm() {
   const { data, error, isLoading } = useDB<Type[]>("type");
   const [selectedType, setSelectedType] = useState<string>();
 
@@ -66,4 +67,10 @@ export default function Create() {
       <Form.Checkbox id="is_public" title="Public" label="Public" />
     </Form>
   );
+}
+
+export default function Create() {
+  const [authenticated] = useCachedState<boolean>("authenticated");
+
+  return authenticated ? <CreateForm /> : <Login />;
 }

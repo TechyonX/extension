@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Icon, List } from "@raycast/api";
 
-import { useAuth, useDB } from "./hooks";
+import { useDB } from "./hooks";
 import { Particle, Type } from "./types";
 import { Login } from "./login";
+import { useCachedState } from "@raycast/utils";
 
 const DEFAULT_CATEGORY = "null";
 
@@ -45,13 +46,7 @@ function Particles() {
 }
 
 export default function Observe() {
-  const { session, sessionLoading } = useAuth();
-  const [authenticated, setAuthenticated] = useState<boolean | undefined>();
+  const [authenticated] = useCachedState<boolean>("authenticated");
 
-  useEffect(() => {
-    if (!sessionLoading && session?.user.aud === "authenticated") setAuthenticated(true);
-  }, [session]);
-
-  if (authenticated) return <Particles />;
-  return <Login onSuccess={() => setAuthenticated(true)} />;
+  return authenticated ? <Particles /> : <Login />;
 }
