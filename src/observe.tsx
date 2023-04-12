@@ -53,7 +53,6 @@ function Particles() {
               icon={{ value: getTypeIcon(particle.type, particle.content), tooltip: `#${particle.id}` }}
               id={particle.id}
               title={{ value: particle.title || particle.content, tooltip: particle.title }}
-              subtitle={particle.description}
               accessories={[
                 {
                   icon: {
@@ -77,6 +76,8 @@ function Particles() {
               ]}
               actions={
                 <ActionPanel>
+                  <Action.CopyToClipboard content={particle.content} />
+                  <Action.Paste content={particle.content} />
                   <ActionPanel.Section />
                   <Action
                     title="Destroy Particle"
