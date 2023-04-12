@@ -24,7 +24,7 @@ function FormContent({ type }: { type?: TypeName }) {
   }
 }
 
-function CreateForm() {
+function Edit() {
   const [user] = useCachedState<User>("@user");
   const [selectedType, setSelectedType] = useState<string>();
   const { data, error, isLoading } = useDB<Type[]>("type");
@@ -105,5 +105,5 @@ function CreateForm() {
 export default function Create() {
   const [user] = useCachedState<User>("@user");
 
-  return user?.aud === "authenticated" ? <CreateForm /> : <Login />;
+  return user?.aud === "authenticated" ? <Edit /> : <Login />;
 }

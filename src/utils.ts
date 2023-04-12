@@ -15,3 +15,12 @@ export function getTypeIcon(type: TypeID, content?: string) {
       return Icon.Document;
   }
 }
+
+export function isUrl(url: string) {
+  try {
+    const urlObject = new URL(url);
+    return urlObject.protocol === "http:" || urlObject.protocol === "https:";
+  } catch (err) {
+    return false;
+  }
+}

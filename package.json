@@ -15,10 +15,10 @@
   "license": "MIT",
   "commands": [
     {
-      "name": "create",
-      "title": "Create",
+      "name": "spawn",
+      "title": "Spawn",
       "description": "",
-      "mode": "view"
+      "mode": "no-view"
     },
     {
       "name": "observe",
