@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Action, ActionPanel, Detail, Form, Toast, popToRoot, showToast } from "@raycast/api";
+import { Action, ActionPanel, Form, Toast, popToRoot, showToast, unstable_AI } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
+import { User } from "@supabase/supabase-js";
+import crypto from "node:crypto";
 
 import { supabase } from "./client";
 import { useDB } from "./hooks";
@@ -22,8 +24,9 @@ function FormContent({ type }: { type?: TypeName }) {
 }
 
 function CreateForm() {
-  const { data, error, isLoading } = useDB<Type[]>("type");
+  const [session] = useCachedState<User>("@session");
   const [selectedType, setSelectedType] = useState<string>();
+  const { data, error, isLoading } = useDB<Type[]>("type");
 
   async function onSubmit(values: ParticleValues) {
     const toast = await showToast({
@@ -32,17 +35,40 @@ function CreateForm() {
     });
 
     try {
-      const { data } = await supabase.auth.getSession();
-      await supabase.from("particle").insert({ ...values, user_id: data?.session?.user?.id });
+      if (values.type === "2" && Array.isArray(values.content) && values.content.length === 1) {
+        const contentPath = values.content[0];
+        const filename = `${crypto.randomBytes(10).toString("hex").split("-")}_${Date.now()}`;
+        const extension = `${contentPath.split(".").pop()}`;
+        const { data, error: storageError } = await supabase.storage
+          .from("media")
+          .upload(`${session?.id}/${filename}.${extension}`, values.content[0]);
+        if (storageError) throw storageError;
+
+        values = {
+          ...values,
+          content: data.path,
+          title: "Image Content Title",
+          description: "Image content summary goes",
+        };
+      } else {
+        const description = await unstable_AI.ask(`Summarize the following content: ${values.content}`);
+        const title = await unstable_AI.ask(
+          `Create a short, concise title for the following content: ${values.content}`
+        );
+        values = { ...values, title, description };
+      }
+
+      const { error: postgrestError } = await supabase.from("particle").insert({ ...values, user_id: session?.id });
+      if (postgrestError) throw postgrestError;
 
       toast.style = Toast.Style.Success;
       toast.title = "New particle created";
+      popToRoot();
     } catch (error) {
+      console.log(error);
       toast.style = Toast.Style.Failure;
       toast.title = error instanceof Error ? error?.message : "Failed to create a particle";
     }
-
-    popToRoot();
   }
 
   if (error) return <Login />;

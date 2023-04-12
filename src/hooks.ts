@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Toast, showToast } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
-import { PostgrestError, Session } from "@supabase/supabase-js";
+import { PostgrestError, Session, User } from "@supabase/supabase-js";
 import { supabase } from "./client";
 
 export function useAuth() {
   const [authenticated, setAuthenticated] = useCachedState<boolean>("authenticated");
-  const [data, setData] = useState<Session>();
+  const [data, setData] = useCachedState<User>("@session");
   const [error, setError] = useState<Error>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -19,10 +19,12 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (data.session && data.user) {
+      setData(data.user);
       setAuthenticated(true);
       toast.style = Toast.Style.Success;
       toast.title = "Signed in";
     } else {
+      setData(undefined);
       setAuthenticated(false);
       toast.style = Toast.Style.Failure;
       toast.title = error?.message || "Invalid login credentials";
@@ -38,6 +40,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signOut();
 
     if (!error) {
+      setData(undefined);
       setAuthenticated(false);
       toast.style = Toast.Style.Success;
       toast.title = "Signed out";
@@ -47,31 +50,31 @@ export function useAuth() {
     }
   }
 
-  useEffect(() => {
-    setIsLoading(true);
-    let ignore = false;
+  // useEffect(() => {
+  //   setIsLoading(true);
+  //   let ignore = false;
 
-    async function fetch() {
-      const { data, error } = await supabase.auth.getSession();
+  //   async function fetch() {
+  //     const { data, error } = await supabase.auth.getSession();
 
-      if (ignore) return;
-      if (data?.session?.user?.aud === "authenticated") {
-        setData(data?.session || undefined);
-        setAuthenticated(true);
-      }
-      if (error) {
-        setError(error);
-        setAuthenticated(true);
-      }
-      return setIsLoading(false);
-    }
+  //     if (ignore) return;
+  //     if (data?.session?.user?.aud === "authenticated") {
+  //       setData(data.user);
+  //       setAuthenticated(true);
+  //     }
+  //     if (error) {
+  //       setError(error);
+  //       setAuthenticated(true);
+  //     }
+  //     return setIsLoading(false);
+  //   }
 
-    fetch();
+  //   fetch();
 
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  //   return () => {
+  //     ignore = true;
+  //   };
+  // }, []);
 
   return { login, logout, authenticated, data, error, isLoading };
 }
