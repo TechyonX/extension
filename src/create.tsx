@@ -24,7 +24,7 @@ function FormContent({ type }: { type?: TypeName }) {
 }
 
 function CreateForm() {
-  const [session] = useCachedState<User>("@session");
+  const [user] = useCachedState<User>("@user");
   const [selectedType, setSelectedType] = useState<string>();
   const { data, error, isLoading } = useDB<Type[]>("type");
 
@@ -41,7 +41,7 @@ function CreateForm() {
         const extension = `${contentPath.split(".").pop()}`;
         const { data, error: storageError } = await supabase.storage
           .from("media")
-          .upload(`${session?.id}/${filename}.${extension}`, values.content[0]);
+          .upload(`${user?.id}/${filename}.${extension}`, values.content[0]);
         if (storageError) throw storageError;
 
         values = {
@@ -58,7 +58,7 @@ function CreateForm() {
         values = { ...values, title, description };
       }
 
-      const { error: postgrestError } = await supabase.from("particle").insert({ ...values, user_id: session?.id });
+      const { error: postgrestError } = await supabase.from("particle").insert({ ...values, user_id: user?.id });
       if (postgrestError) throw postgrestError;
 
       toast.style = Toast.Style.Success;
@@ -96,7 +96,7 @@ function CreateForm() {
 }
 
 export default function Create() {
-  const [authenticated] = useCachedState<boolean>("authenticated");
+  const [user] = useCachedState<User>("@user");
 
-  return authenticated ? <CreateForm /> : <Login />;
+  return user?.aud === "authenticated" ? <CreateForm /> : <Login />;
 }

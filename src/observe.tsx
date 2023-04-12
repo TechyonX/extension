@@ -5,6 +5,7 @@ import { useDB } from "./hooks";
 import { Particle, Type } from "./types";
 import { Login } from "./login";
 import { useCachedState } from "@raycast/utils";
+import { User } from "@supabase/supabase-js";
 
 const DEFAULT_CATEGORY = "null";
 
@@ -46,7 +47,7 @@ function Particles() {
 }
 
 export default function Observe() {
-  const [authenticated] = useCachedState<boolean>("authenticated");
+  const [user] = useCachedState<User>("@user");
 
-  return authenticated ? <Particles /> : <Login />;
+  return user?.aud === "authenticated" ? <Particles /> : <Login />;
 }

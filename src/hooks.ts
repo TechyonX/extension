@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
 import { Toast, showToast } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
-import { PostgrestError, Session, User } from "@supabase/supabase-js";
+import { PostgrestError, User } from "@supabase/supabase-js";
 import { supabase } from "./client";
 
 export function useAuth() {
-  const [authenticated, setAuthenticated] = useCachedState<boolean>("authenticated");
-  const [data, setData] = useCachedState<User>("@session");
-  const [error, setError] = useState<Error>();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [data, setData] = useCachedState<User>("@user");
 
   async function login(email: string, password: string) {
     const toast = await showToast({
@@ -20,12 +17,10 @@ export function useAuth() {
 
     if (data.session && data.user) {
       setData(data.user);
-      setAuthenticated(true);
       toast.style = Toast.Style.Success;
       toast.title = "Signed in";
     } else {
       setData(undefined);
-      setAuthenticated(false);
       toast.style = Toast.Style.Failure;
       toast.title = error?.message || "Invalid login credentials";
     }
@@ -41,7 +36,6 @@ export function useAuth() {
 
     if (!error) {
       setData(undefined);
-      setAuthenticated(false);
       toast.style = Toast.Style.Success;
       toast.title = "Signed out";
     } else {
@@ -50,33 +44,7 @@ export function useAuth() {
     }
   }
 
-  // useEffect(() => {
-  //   setIsLoading(true);
-  //   let ignore = false;
-
-  //   async function fetch() {
-  //     const { data, error } = await supabase.auth.getSession();
-
-  //     if (ignore) return;
-  //     if (data?.session?.user?.aud === "authenticated") {
-  //       setData(data.user);
-  //       setAuthenticated(true);
-  //     }
-  //     if (error) {
-  //       setError(error);
-  //       setAuthenticated(true);
-  //     }
-  //     return setIsLoading(false);
-  //   }
-
-  //   fetch();
-
-  //   return () => {
-  //     ignore = true;
-  //   };
-  // }, []);
-
-  return { login, logout, authenticated, data, error, isLoading };
+  return { login, logout, data };
 }
 
 export function useDB<T>(relation: string) {
