@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Icon, List } from "@raycast/api";
+import { Color, Icon, List } from "@raycast/api";
+import { useCachedState } from "@raycast/utils";
+import { User } from "@supabase/supabase-js";
 
 import { useDB } from "./hooks";
 import { Particle, Type } from "./types";
 import { Login } from "./login";
-import { useCachedState } from "@raycast/utils";
-import { User } from "@supabase/supabase-js";
+import { getTypeIcon } from "./utils";
 
 const DEFAULT_CATEGORY = "null";
 
@@ -15,10 +16,17 @@ function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }
   return !isLoading ? (
     <List.Dropdown defaultValue={DEFAULT_CATEGORY} onChange={onTypeChange} tooltip="Select Category" storeValue>
       <List.Dropdown.Item key={"0"} icon={Icon.AppWindowGrid3x3} title="All types" value={DEFAULT_CATEGORY} />
-      {data?.length &&
-        data.map((type) => (
-          <List.Dropdown.Item key={type.id} icon={type.emoji} title={type.name} value={type.id.toString()} />
-        ))}
+      <List.Dropdown.Section>
+        {data?.length &&
+          data.map((type) => (
+            <List.Dropdown.Item
+              key={type.id}
+              icon={getTypeIcon(type.id)}
+              title={type.name}
+              value={type.id.toString()}
+            />
+          ))}
+      </List.Dropdown.Section>
     </List.Dropdown>
   ) : null;
 }
@@ -29,9 +37,9 @@ function Particles() {
 
   const typeParticles = type === DEFAULT_CATEGORY ? data : data?.filter((particle) => particle.type === parseInt(type));
 
-  const onTypeChange = (newCategory: string) => {
+  function onTypeChange(newCategory: string) {
     type !== newCategory && setType(newCategory);
-  };
+  }
 
   return (
     <List searchBarAccessory={<Types onTypeChange={onTypeChange} />} isLoading={isLoading}>
@@ -39,7 +47,34 @@ function Particles() {
       <List.Section title="Particles" subtitle={`${data?.length}`}>
         {typeParticles?.length &&
           typeParticles.map((particle) => (
-            <List.Item key={particle.id} id={particle.id} title={particle.content} subtitle={particle.content} />
+            <List.Item
+              key={particle.id}
+              icon={{ value: getTypeIcon(particle.type, particle.content), tooltip: `#${particle.id}` }}
+              id={particle.id}
+              title={particle.title || particle.content}
+              subtitle={particle.description}
+              accessories={[
+                {
+                  icon: {
+                    source: Icon.TwoPeople,
+                    tintColor: particle.is_public ? Color.Green : "rgb(128, 128, 128, 0.7)",
+                  },
+                  tooltip: particle.is_public ? "Public item" : "Private item",
+                },
+                {
+                  icon: {
+                    source: Icon.Tray,
+                    tintColor: particle.is_archived ? Color.Green : "rgb(128, 128, 128, 0.7)",
+                  },
+                  tooltip: particle.is_archived ? "Archived item" : "Listed item",
+                },
+                {
+                  tag: {
+                    value: new Date(Date.parse(particle.created_at)),
+                  },
+                },
+              ]}
+            />
           ))}
       </List.Section>
     </List>

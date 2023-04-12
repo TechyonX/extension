@@ -1,13 +1,14 @@
+import crypto from "node:crypto";
 import { useState } from "react";
 import { Action, ActionPanel, Form, Toast, popToRoot, showToast, unstable_AI } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
-import crypto from "node:crypto";
 
 import { supabase } from "./client";
 import { useDB } from "./hooks";
-import { ParticleValues, Type, TypeName } from "./types";
 import { Login } from "./login";
+import { ParticleValues, Type, TypeName } from "./types";
+import { getTypeIcon } from "./utils";
 
 function FormContent({ type }: { type?: TypeName }) {
   const props = { id: "content", title: "Content" };
@@ -76,14 +77,14 @@ function CreateForm() {
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm onSubmit={onSubmit} />
+          <Action.SubmitForm title="Create Particle" onSubmit={onSubmit} />
         </ActionPanel>
       }
       isLoading={isLoading}
     >
       <Form.Dropdown id="type" title="Type" value={selectedType} onChange={setSelectedType} isLoading>
         {data?.map((type) => (
-          <Form.Dropdown.Item key={type.id} value={type.id.toString()} title={type.name} icon={type.emoji} />
+          <Form.Dropdown.Item key={type.id} value={type.id.toString()} title={type.name} icon={getTypeIcon(type.id)} />
         ))}
       </Form.Dropdown>
       {selectedType ? <FormContent type={data?.find((type) => type.id === parseInt(selectedType))?.name} /> : null}
