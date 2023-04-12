@@ -77,9 +77,57 @@ function Particles() {
               actions={
                 <ActionPanel>
                   <Action.CopyToClipboard content={particle.content} />
-                  <Action.Paste content={particle.content} />
+                  <Action.Paste icon={Icon.TextCursor} content={particle.content} />
                   <ActionPanel.Section />
                   <Action
+                    icon={Icon.TwoPeople}
+                    title="Toggle Publish"
+                    shortcut={{ modifiers: ["ctrl"], key: "a" }}
+                    onAction={async () => {
+                      const toast = await showToast({
+                        style: Toast.Style.Animated,
+                        title: particle.is_public ? "Unpublishing particle..." : "Publishing particle...",
+                      });
+                      const { error } = await supabase
+                        .from("particle")
+                        .update({ is_public: !particle.is_public })
+                        .eq("id", particle.id);
+                      mutate();
+                      if (!error) {
+                        toast.style = Toast.Style.Success;
+                        toast.title = `Particle ${particle.is_public ? "is private" : "is public"}`;
+                      } else {
+                        toast.style = Toast.Style.Failure;
+                        toast.title = error?.message || "Could not respawn particle";
+                      }
+                    }}
+                  />
+                  <Action
+                    icon={Icon.Tray}
+                    title="Toggle Archive"
+                    shortcut={{ modifiers: ["ctrl"], key: "s" }}
+                    onAction={async () => {
+                      const toast = await showToast({
+                        style: Toast.Style.Animated,
+                        title: particle.is_archived ? "Unarchiving particle..." : "Archiving particle...",
+                      });
+                      const { error } = await supabase
+                        .from("particle")
+                        .update({ is_archived: !particle.is_archived })
+                        .eq("id", particle.id);
+                      mutate();
+                      if (!error) {
+                        toast.style = Toast.Style.Success;
+                        toast.title = `Particle ${particle.is_archived ? "is listed" : "is archived"}`;
+                      } else {
+                        toast.style = Toast.Style.Failure;
+                        toast.title = error?.message || "Could not respawn particle";
+                      }
+                    }}
+                  />
+                  <ActionPanel.Section />
+                  <Action
+                    icon={Icon.Trash}
                     title="Destroy Particle"
                     shortcut={{ modifiers: ["ctrl"], key: "x" }}
                     onAction={async () => {

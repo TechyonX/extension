@@ -54,7 +54,7 @@ export function useDB<T>(relation: string) {
 
   async function fetch() {
     setIsLoading(true);
-    const { data, error } = await supabase.from(relation).select();
+    const { data, error } = await supabase.from(relation).select().order("updated_at", { ascending: false });
 
     if (data) setData(data as T);
     if (error) setError(error);
