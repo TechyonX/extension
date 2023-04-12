@@ -3,7 +3,7 @@
   "name": "particle",
   "title": "Particle",
   "description": "Raycast extension for Particle",
-  "icon": "Particle-icon.png",
+  "icon": "spawn.png",
   "author": "khasbilegt",
   "owner": "techyonx",
   "categories": [
@@ -17,14 +17,16 @@
     {
       "name": "spawn",
       "title": "Spawn",
-      "description": "",
-      "mode": "no-view"
+      "description": "Spawn or create new particles with your selected texts or files",
+      "mode": "no-view",
+      "icon": "spawn.png"
     },
     {
       "name": "observe",
       "title": "Observe",
-      "description": "",
-      "mode": "view"
+      "description": "You can list all the particles, filter by their types and execute certain actions",
+      "mode": "view",
+      "icon": "observe.png"
     }
   ],
   "dependencies": {
