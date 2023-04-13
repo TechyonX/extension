@@ -46,16 +46,24 @@ function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }
 function Particles() {
   const [type, setType] = useState<string>(DEFAULT_CATEGORY);
   const { data, isLoading, mutate } = useDB<Particle[]>("particle", { orderBy: "updated_at", ascending: false });
-  const { push } = useNavigation();
 
   const typeParticles = type === DEFAULT_CATEGORY ? data : data?.filter((particle) => particle.type === parseInt(type));
 
   function onTypeChange(newCategory: string) {
     type !== newCategory && setType(newCategory);
   }
+  function getPublicURL(path: string) {
+    const res = supabase.storage.from("media").getPublicUrl(path, {
+      transform: {
+        width: 500,
+        height: 600,
+      },
+    });
+    return res.data.publicUrl;
+  }
 
   return (
-    <List searchBarAccessory={<Types onTypeChange={onTypeChange} />} isLoading={isLoading}>
+    <List searchBarAccessory={<Types onTypeChange={onTypeChange} />} isLoading={isLoading} isShowingDetail>
       <List.EmptyView title="No particle exists" description="Any particles you have created will be listed here." />
       <List.Section title="Particles" subtitle={`${data?.length}`}>
         {typeParticles?.length &&
@@ -86,6 +94,13 @@ function Particles() {
                   },
                 },
               ]}
+              detail={
+                <List.Item.Detail
+                  markdown={
+                    particle.type === 2 ? `![${particle.title}](${getPublicURL(particle.content)})` : particle.content
+                  }
+                />
+              }
               actions={
                 <ActionPanel>
                   <Action.CopyToClipboard content={particle.content} />
