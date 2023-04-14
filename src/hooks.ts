@@ -5,28 +5,6 @@ import { PostgrestError, User } from "@supabase/supabase-js";
 
 import { supabase } from "./supabase";
 
-// const client = new OAuth.PKCEClient({
-//   redirectMethod: OAuth.RedirectMethod.Web,
-//   providerName: "Google",
-//   providerIcon: "google-logo.png",
-//   providerId: "google",
-//   description: "Connect your Google account\n(Raycast Extension Demo)",
-// });
-
-// // Authorization
-
-// export async function authorize() {
-//   const authRequest = await client.authorizationRequest({
-//     endpoint: "https://accounts.google.com/o/oauth2/v2/auth",
-//     clientId: "759534785847-6236j72sfcvnjq535mo1bngdd59n5fu8.apps.googleusercontent.com",
-//     scope:
-//       "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.readonly",
-//   });
-//   const { authorizationCode } = await client.authorize(authRequest);
-//   return authorizationCode;
-//   // await client.setTokens(await fetchTokens(authRequest, authorizationCode));
-// }
-
 const google = new OAuth.PKCEClient({
   redirectMethod: OAuth.RedirectMethod.Web,
   providerName: "Google",
