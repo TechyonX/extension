@@ -70,7 +70,6 @@ export default async function Spawn() {
   } catch (error) {
     try {
       const selectedText = await getSelectedText();
-      console.log("selectedText: ", selectedText);
       const description = await unstable_AI.ask(
         `Summarize the following content, response should not contain newlines, quotes, trailing spaces etc: ${selectedText}`
       );
@@ -93,7 +92,6 @@ export default async function Spawn() {
       toast.title = "Spawned new particle successfuly";
       showHUD(toast.title);
     } catch (error) {
-      console.log(error);
       toast.style = Toast.Style.Failure;
       toast.title = error instanceof Error ? error?.message : "Failed to spawn new particle";
       return showHUD(toast.title);
