@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Action, ActionPanel, Form, LaunchType, launchCommand, open } from "@raycast/api";
+import { Action, ActionPanel, Form } from "@raycast/api";
 
 import { useAuth } from "./hooks";
 
