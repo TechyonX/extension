@@ -1,22 +1,38 @@
 import crypto from "node:crypto";
-import { getSelectedText, showToast, Toast, unstable_AI, getSelectedFinderItems } from "@raycast/api";
+import { readFileSync } from "node:fs";
+import { basename, extname } from "node:path";
+import { getSelectedText, showToast, Toast, unstable_AI, getSelectedFinderItems, showHUD } from "@raycast/api";
+import mime from "mime-types";
 
 import { supabase } from "./client";
 import { isUrl } from "./utils";
 
 async function uploadImage(userId: string, path: string) {
-  const filename = `${crypto.randomBytes(10).toString("hex").split("-")}_${Date.now()}`;
-  const extension = `${path.split(".").pop()}`;
-  const { data, error } = await supabase.storage.from("media").upload(`${userId}/${filename}.${extension}`, path);
+  try {
+    const extension = extname(path).toLowerCase();
+    const filename = `${crypto.randomBytes(10).toString("hex").split("-")}_${Date.now()}${extension}`;
+    const fileBody = readFileSync(path);
+    const contentType = mime.contentType(extension);
 
-  return data?.path || error;
+    if (contentType) {
+      const { data, error } = await supabase.storage
+        .from("media")
+        .upload(`${userId}/${filename}`, fileBody, { contentType });
+
+      if (error) throw error;
+      return Promise.resolve({ title: basename(path), content: data.path });
+    }
+    throw new Error("Not supported file");
+  } catch (error) {
+    return false;
+  }
 }
 
-async function insertParticle(userId: string, path: string) {
+async function insertParticle(userId: string, options: { title: string; content: string }) {
   const { error } = await supabase.from("particle").insert({
-    title: "Image Title",
+    title: options.title || "Image Title",
     description: "Image description will be added soon",
-    content: path,
+    content: options.content,
     user_id: userId,
     type: 2,
   });
@@ -24,6 +40,7 @@ async function insertParticle(userId: string, path: string) {
 }
 
 export default async function Spawn() {
+  await showHUD("Spawning particle...");
   const toast = await showToast({
     style: Toast.Style.Animated,
     title: "Spawing particle...",
@@ -35,26 +52,25 @@ export default async function Spawn() {
   if (user_id === undefined) {
     toast.style = Toast.Style.Failure;
     toast.title = "Not authenticated";
-  } else {
-    try {
-      const selectedImages = await getSelectedFinderItems();
-      const imageUploadPromises = selectedImages.map(({ path }) => uploadImage(user_id, path));
-      const uploadedPaths = await Promise.all(imageUploadPromises);
-      const insertParticlePromises = uploadedPaths.map((path) =>
-        typeof path === "string" ? insertParticle(user_id, path) : Promise.resolve(false)
-      );
-      const response = await Promise.all(insertParticlePromises);
+    return await showHUD(toast.title);
+  }
 
-      toast.style = Toast.Style.Success;
-      toast.title = `Spawned ${response.filter((value) => value).length}/${
-        selectedImages.length
-      } new particle(s) successfuly`;
-    } catch (error) {
-      console.log(String(error));
-    }
+  try {
+    const selectedImages = await getSelectedFinderItems();
+    const imageUploadPromises = selectedImages.map(({ path }) => uploadImage(user_id, path));
+    const uploadedPaths = await Promise.all(imageUploadPromises);
+    const insertParticlePromises = uploadedPaths.map((particle) =>
+      typeof particle === "object" ? insertParticle(user_id, particle) : Promise.resolve(false)
+    );
+    const response = await Promise.all(insertParticlePromises);
 
+    toast.style = Toast.Style.Success;
+    toast.title = `Spawned ${response.filter((value) => value).length}/${selectedImages.length} new particle(s)`;
+    return await showHUD(toast.title);
+  } catch (error) {
     try {
       const selectedText = await getSelectedText();
+      console.log("selectedText: ", selectedText);
       const description = await unstable_AI.ask(
         `Summarize the following content, response should not contain newlines, quotes, trailing spaces etc: ${selectedText}`
       );
@@ -71,16 +87,16 @@ export default async function Spawn() {
         .from("particle")
         .insert({ ...defaultValues, type: isUrl(selectedText) ? 1 : 3 });
 
-      if (postgrestError) {
-        throw postgrestError;
-      } else {
-        toast.style = Toast.Style.Success;
-        toast.title = "Spawned new particle successfuly";
-      }
+      if (postgrestError) throw postgrestError;
+
+      toast.style = Toast.Style.Success;
+      toast.title = "Spawned new particle successfuly";
+      showHUD(toast.title);
     } catch (error) {
       console.log(error);
       toast.style = Toast.Style.Failure;
       toast.title = error instanceof Error ? error?.message : "Failed to spawn new particle";
+      return showHUD(toast.title);
     }
   }
 }

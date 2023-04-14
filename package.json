@@ -32,10 +32,12 @@
   "dependencies": {
     "@raycast/api": "^1.49.2",
     "@raycast/utils": "^1.5.2",
-    "@supabase/supabase-js": "^2.15.0"
+    "@supabase/supabase-js": "^2.15.0",
+    "mime-types": "^2.1.35"
   },
   "devDependencies": {
     "@raycast/eslint-config": "1.0.5",
+    "@types/mime-types": "^2.1.1",
     "@types/node": "18.8.3",
     "@types/react": "18.0.9",
     "eslint": "^7.32.0",

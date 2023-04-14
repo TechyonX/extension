@@ -41,15 +41,6 @@ function Particles() {
   function onTypeChange(newCategory: string) {
     type !== newCategory && setType(newCategory);
   }
-  function getPublicURL(path: string) {
-    const res = supabase.storage.from("media").getPublicUrl(path, {
-      transform: {
-        width: 500,
-        height: 600,
-      },
-    });
-    return res.data.publicUrl;
-  }
 
   return (
     <List searchBarAccessory={<Types onTypeChange={onTypeChange} />} isLoading={isLoading} isShowingDetail>
@@ -86,7 +77,11 @@ function Particles() {
               detail={
                 <List.Item.Detail
                   markdown={
-                    particle.type === 2 ? `![${particle.title}](${getPublicURL(particle.content)})` : particle.content
+                    particle.type === 2
+                      ? `![${particle.title}](${
+                          supabase.storage.from("media").getPublicUrl(particle.content).data.publicUrl
+                        })`
+                      : particle.content
                   }
                 />
               }
