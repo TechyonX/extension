@@ -20,8 +20,8 @@ export function Login() {
     }
   }
 
-  async function onSubmit(values: { email: string; password: string }) {
-    await login(values.email, values.password);
+  async function onSubmit() {
+    await login();
   }
 
   return (

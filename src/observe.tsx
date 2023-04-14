@@ -1,21 +1,10 @@
 import { useState } from "react";
-import {
-  Action,
-  ActionPanel,
-  Alert,
-  Color,
-  Icon,
-  List,
-  Toast,
-  confirmAlert,
-  showToast,
-  useNavigation,
-} from "@raycast/api";
+import { Action, ActionPanel, Alert, Color, Icon, List, Toast, confirmAlert, showToast } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
 
-import { supabase } from "./client";
 import { Create } from "./create";
+import { supabase } from "./supabase";
 import { useDB } from "./hooks";
 import { Login } from "./login";
 import { Particle, Type } from "./types";

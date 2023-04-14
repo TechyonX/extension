@@ -1,6 +1,6 @@
 import { getSelectedText, showToast, Toast, unstable_AI, getSelectedFinderItems, showHUD } from "@raycast/api";
 
-import { supabase } from "./client";
+import { supabase } from "./supabase";
 import { isUrl, uploadImage } from "./utils";
 
 async function insertParticle(userId: string, options: { title: string; content: string }) {
