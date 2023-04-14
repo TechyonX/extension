@@ -1,6 +1,5 @@
-import crypto from "node:crypto";
 import { useState } from "react";
-import { Action, ActionPanel, Form, Toast, popToRoot, showToast, unstable_AI } from "@raycast/api";
+import { Action, ActionPanel, Form, Toast, showToast, unstable_AI, useNavigation } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
 
@@ -8,47 +7,76 @@ import { supabase } from "./client";
 import { useDB } from "./hooks";
 import { Login } from "./login";
 import { ParticleValues, Type, TypeName } from "./types";
-import { getTypeIcon } from "./utils";
+import { getTypeIcon, isUrl, uploadImage } from "./utils";
 
-function FormContent({ type }: { type?: TypeName }) {
-  const props = { id: "content", title: "Content" };
+function FormContent({ type, props }: { type?: TypeName; props?: any }) {
+  const extendedProps = { id: "content", title: "Content", ...props };
 
   switch (type) {
     case "Link":
-      return <Form.TextField {...props} />;
+      return <Form.TextField {...extendedProps} />;
     case "Image":
-      return <Form.FilePicker {...props} />;
+      return <Form.FilePicker {...extendedProps} allowMultipleSelection={false} />;
     case "Text":
     default:
-      return <Form.TextArea {...props} />;
+      return <Form.TextArea {...extendedProps} enableMarkdown />;
   }
 }
 
-function Edit() {
+export function Create() {
   const [user] = useCachedState<User>("@user");
+  const [contentError, setContentError] = useState<string>();
   const [selectedType, setSelectedType] = useState<string>();
   const { data, error, isLoading } = useDB<Type[]>("type");
+  const { pop } = useNavigation();
+
+  function dropContentErrorIfNeeded() {
+    if (contentError && contentError.length > 0) {
+      setContentError(undefined);
+    }
+  }
+
+  function contentErrorValidation(event: any) {
+    const value = event.target.value;
+
+    if (value && value.length > 0) {
+      if (selectedType === "1" && !isUrl(value)) {
+        setContentError("The field is not a valid URL!");
+      } else {
+        dropContentErrorIfNeeded();
+      }
+    } else {
+      setContentError("The field should't be empty!");
+    }
+  }
 
   async function onSubmit(values: ParticleValues) {
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: "Creating particle...",
+      title: "Spawing particle...",
     });
 
+    if (!user) {
+      toast.style = Toast.Style.Failure;
+      toast.title = "Not authenticated";
+      return pop();
+    }
+
+    if (!values.content || values.content.length === 0) {
+      toast.style = Toast.Style.Failure;
+      toast.title = "The content field shouldn't be empty!";
+      return setContentError("The field should't be empty!");
+    }
+
     try {
-      if (values.type === "2" && Array.isArray(values.content) && values.content.length === 1) {
-        const contentPath = values.content[0];
-        const filename = `${crypto.randomBytes(10).toString("hex").split("-")}_${Date.now()}`;
-        const extension = `${contentPath.split(".").pop()}`;
-        const { data, error: storageError } = await supabase.storage
-          .from("media")
-          .upload(`${user?.id}/${filename}.${extension}`, values.content[0]);
-        if (storageError) throw storageError;
+      if (values.type === "2" && Array.isArray(values.content)) {
+        const res = await uploadImage(user.id, values.content[0]);
+        if (!res) throw "Failed to upload the image";
 
         values = {
           ...values,
-          content: data.path,
-          title: "Image Content Title",
+          content: res.content,
+          title: res.title || "Image Content Title",
           description: "Image content summary goes",
         };
       } else {
@@ -65,16 +93,17 @@ function Edit() {
         };
       }
 
-      const { error: postgrestError } = await supabase.from("particle").insert({ ...values, user_id: user?.id });
+      const { error: postgrestError } = await supabase
+        .from("particle")
+        .insert({ ...values, type: parseInt(values.type), user_id: user.id });
       if (postgrestError) throw postgrestError;
 
       toast.style = Toast.Style.Success;
-      toast.title = "New particle created";
-      popToRoot();
+      toast.title = "Spawned new particle";
+      pop();
     } catch (error) {
-      console.log(error);
       toast.style = Toast.Style.Failure;
-      toast.title = error instanceof Error ? error?.message : "Failed to create a particle";
+      toast.title = error instanceof Error ? error?.message : "Failed to spawn new particle";
     }
   }
 
@@ -83,7 +112,7 @@ function Edit() {
     <Form
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Create Particle" onSubmit={onSubmit} />
+          <Action.SubmitForm title="Spawn Particle" onSubmit={onSubmit} />
         </ActionPanel>
       }
       isLoading={isLoading}
@@ -93,17 +122,16 @@ function Edit() {
           <Form.Dropdown.Item key={type.id} value={type.id.toString()} title={type.name} icon={getTypeIcon(type.id)} />
         ))}
       </Form.Dropdown>
-      {selectedType ? <FormContent type={data?.find((type) => type.id === parseInt(selectedType))?.name} /> : null}
-      <Form.Separator />
+      {selectedType ? (
+        <FormContent
+          type={data?.find((type) => type.id === parseInt(selectedType))?.name}
+          props={{ error: contentError, onChange: dropContentErrorIfNeeded, onBlur: contentErrorValidation }}
+        />
+      ) : null}
+      <Form.Separator /> 
       <Form.TextField id="title" title="Title" />
       <Form.TextArea id="description" title="Description" />
       <Form.Checkbox id="is_public" title="Public" label="Public" />
     </Form>
   );
-}
-
-export default function Create() {
-  const [user] = useCachedState<User>("@user");
-
-  return user?.aud === "authenticated" ? <Edit /> : <Login />;
 }

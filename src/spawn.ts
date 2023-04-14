@@ -1,32 +1,7 @@
-import crypto from "node:crypto";
-import { readFileSync } from "node:fs";
-import { basename, extname } from "node:path";
 import { getSelectedText, showToast, Toast, unstable_AI, getSelectedFinderItems, showHUD } from "@raycast/api";
-import mime from "mime-types";
 
 import { supabase } from "./client";
-import { isUrl } from "./utils";
-
-async function uploadImage(userId: string, path: string) {
-  try {
-    const extension = extname(path).toLowerCase();
-    const filename = `${crypto.randomBytes(10).toString("hex").split("-")}_${Date.now()}${extension}`;
-    const fileBody = readFileSync(path);
-    const contentType = mime.contentType(extension);
-
-    if (contentType) {
-      const { data, error } = await supabase.storage
-        .from("media")
-        .upload(`${userId}/${filename}`, fileBody, { contentType });
-
-      if (error) throw error;
-      return Promise.resolve({ title: basename(path), content: data.path });
-    }
-    throw new Error("Not supported file");
-  } catch (error) {
-    return false;
-  }
-}
+import { isUrl, uploadImage } from "./utils";
 
 async function insertParticle(userId: string, options: { title: string; content: string }) {
   const { error } = await supabase.from("particle").insert({
