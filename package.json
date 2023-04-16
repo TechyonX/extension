@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "particle",
   "title": "Particle",
-  "description": "Raycast extension for Particle",
+  "description": "Particle,the ultimate digital content manager inspired by the quantum universe",
   "icon": "particle.png",
   "author": "khasbilegt",
   "owner": "techyonx",
@@ -17,7 +17,7 @@
     {
       "name": "spawn",
       "title": "Spawn",
-      "description": "Spawn or create new particles with your selected texts or files",
+      "description": "Spawn or create new particles from your selected texts or files",
       "mode": "no-view",
       "icon": "particle.png"
     },
