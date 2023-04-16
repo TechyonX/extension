@@ -1,79 +1,47 @@
-import crypto from "node:crypto";
 import { useEffect, useState } from "react";
-import { OAuth, showToast, Toast } from "@raycast/api";
+import { showToast, Toast } from "@raycast/api";
 import { PostgrestError, User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { useCachedState } from "@raycast/utils";
 
+import crypto from "node:crypto";
 global.crypto = crypto;
 
-const google = new OAuth.PKCEClient({
-  redirectMethod: OAuth.RedirectMethod.Web,
-  providerName: "Google",
-  providerIcon: "google-logo.png",
-  providerId: "google",
-  description: "Connect your Google account",
-});
-
-const clientId = "1045722940985-2o9h3tki5ekcaf0pd249r7cssk9b7dtm.apps.googleusercontent.com";
-const scopes = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
-
-export async function authorize() {
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: "https://raycast.com/redirect/extension",
-        skipBrowserRedirect: true,
-        scopes,
-      },
-    });
-
-    const authRequest = await google.authorizationRequest({
-      endpoint: "https://accounts.google.com/o/oauth2/v2/auth",
-      clientId,
-      scope: scopes,
-    });
-
-    console.log(data?.url);
-    console.log(authRequest.toURL());
-
-    const url = data?.url ? new URL(data.url) : undefined;
-    const authURL = new URL(authRequest.toURL());
-    const challenge = url?.searchParams.get("code_challenge");
-    const method = url?.searchParams.get("code_challenge_method");
-    const raycastURI = authURL.searchParams.get("redirect_uri");
-
-    if (challenge && method && raycastURI) {
-      authURL.searchParams.set("code_challenge", challenge);
-      authURL.searchParams.set("code_challenge_method", method.toUpperCase());
-      authURL.searchParams.set("redirect_to", raycastURI);
-      authURL.searchParams.set("redirect_uri", "https://hpiywkenufslzbcpcijs.supabase.co/auth/v1/callback");
-    }
-
-    if (error) throw error;
-    const { authorizationCode } = await google.authorize({ url: authURL.toString() });
-    // const { authorizationCode } = await google.authorize(authRequest);
-    return authorizationCode;
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
-}
-
 export function useAuth() {
-  const [data, setData] = useState<User>();
+  const [data, setData] = useCachedState<User>("@user");
+  const [emailSent, setEmailSent] = useCachedState<boolean>("@emailSent");
 
-  async function login() {
+  async function getOTP(email: string) {
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Sending magic link...",
+    });
+
+    const res = !emailSent ? await supabase.auth.signInWithOtp({ email }) : { data: null, error: null };
+
+    if (res?.error) {
+      setData(undefined);
+      toast.style = Toast.Style.Failure;
+      toast.title = res.error?.message || "Could not send a magic link";
+      return setEmailSent(false);
+    } else {
+      toast.style = Toast.Style.Success;
+      toast.title = "Magic link is sent";
+      return setEmailSent(true);
+    }
+  }
+
+  async function login(email: string, otp: string) {
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: "Signing in...",
     });
 
-    const authorizationCode = await authorize();
-    const res = authorizationCode ? await supabase.auth.exchangeCodeForSession(authorizationCode) : null;
+    const res = await supabase.auth.verifyOtp({ email, token: otp, type: "magiclink" });
 
     if (res?.data.session && res?.data.user) {
       setData(res.data.user);
+      setEmailSent(false);
       toast.style = Toast.Style.Success;
       toast.title = "Signed in";
     } else {
@@ -93,6 +61,7 @@ export function useAuth() {
 
     if (!error) {
       setData(undefined);
+      setEmailSent(undefined);
       toast.style = Toast.Style.Success;
       toast.title = "Signed out";
     } else {
@@ -101,7 +70,7 @@ export function useAuth() {
     }
   }
 
-  return { login, logout, data };
+  return { getOTP, login, logout, data };
 }
 
 export function useDB<T>(relation: string, options?: any) {

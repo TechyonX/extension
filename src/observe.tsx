@@ -7,6 +7,8 @@ import { useAuth, useDB } from "./hooks";
 import { Login } from "./login";
 import { Particle, Type } from "./types";
 import { getTypeIcon } from "./utils";
+import { useCachedState } from "@raycast/utils";
+import { User } from "@supabase/supabase-js";
 
 const DEFAULT_CATEGORY = "null";
 
@@ -32,6 +34,7 @@ function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }
 }
 
 function Particles() {
+  const { logout } = useAuth();
   const [type, setType] = useState<string>(DEFAULT_CATEGORY);
   const { data, isLoading, mutate } = useDB<Particle[]>("particle", { orderBy: "updated_at", ascending: false });
   const { push } = useNavigation();
@@ -150,33 +153,33 @@ function Particles() {
                   />
                   <ActionPanel.Section />
                   <Action
-                    icon={Icon.Trash}
-                    title="Destroy Particle"
-                    shortcut={{ modifiers: ["ctrl"], key: "x" }}
+                    icon={Icon.Logout}
+                    title="Logout"
+                    shortcut={{ modifiers: ["ctrl"], key: "q" }}
                     onAction={async () => {
                       if (
                         await confirmAlert({
-                          title: `Destroy Particle`,
-                          message:
-                            "The fate of the universe may depend on this particular particle you are about to destroy. Should we procedd?",
-                          primaryAction: { title: "Destroy", style: Alert.ActionStyle.Destructive },
+                          title: `Logout`,
+                          message: "You are about to logout. Should we procedd?",
+                          primaryAction: { title: "Logout", style: Alert.ActionStyle.Destructive },
                         })
                       ) {
                         const toast = await showToast({
                           style: Toast.Style.Animated,
-                          title: "Destroying particle...",
+                          title: "Logging out...",
                         });
-                        const { error } = await supabase.from("particle").delete().eq("id", particle.id);
-                        mutate();
-                        if (!error) {
-                          toast.style = Toast.Style.Success;
-                          toast.title = "Particle destroyed";
-                        } else {
-                          toast.style = Toast.Style.Failure;
-                          toast.title = error?.message || "Could not destroy particle";
-                        }
+
+                        await logout();
+                        toast.style = Toast.Style.Success;
+                        toast.title = "Logged out";
                       }
                     }}
+                  />
+                  <Action
+                    icon={Icon.Trash}
+                    title="Destroy Particle"
+                    shortcut={{ modifiers: ["ctrl"], key: "x" }}
+                    onAction={async () => await logout()}
                   />
                 </ActionPanel>
               }
@@ -188,7 +191,7 @@ function Particles() {
 }
 
 export default function Observe() {
-  const { data } = useAuth();
+  const [data] = useCachedState<User>("@user");
 
   return data?.aud === "authenticated" ? <Particles /> : <Login />;
 }
