@@ -3,8 +3,9 @@ import { showToast, Toast } from "@raycast/api";
 import { PostgrestError, User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { useCachedState } from "@raycast/utils";
+import { Crypto } from "@peculiar/webcrypto";
 
-import crypto from "node:crypto";
+const crypto = new Crypto();
 global.crypto = crypto;
 
 export function useAuth() {
