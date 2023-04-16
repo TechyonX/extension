@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { OAuth, showToast, Toast } from "@raycast/api";
-import { useCachedState } from "@raycast/utils";
 import { PostgrestError, User } from "@supabase/supabase-js";
 
 import { supabase } from "./supabase";
@@ -34,7 +33,7 @@ export async function authorize() {
 }
 
 export function useAuth() {
-  const [data, setData] = useCachedState<User>("@user");
+  const [data, setData] = useState<User>();
 
   async function login() {
     const toast = await showToast({

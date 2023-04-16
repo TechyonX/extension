@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Action, ActionPanel, Alert, Color, Icon, List, Toast, confirmAlert, showToast } from "@raycast/api";
-import { useCachedState } from "@raycast/utils";
-import { User } from "@supabase/supabase-js";
 
 import { Create } from "./create";
 import { supabase } from "./supabase";
-import { useDB } from "./hooks";
+import { useAuth, useDB } from "./hooks";
 import { Login } from "./login";
 import { Particle, Type } from "./types";
 import { getTypeIcon } from "./utils";
@@ -190,7 +188,7 @@ function Particles() {
 }
 
 export default function Observe() {
-  const [user] = useCachedState<User>("@user");
+  const { data } = useAuth();
 
-  return user?.aud === "authenticated" ? <Particles /> : <Login />;
+  return data?.aud === "authenticated" ? <Particles /> : <Login />;
 }
