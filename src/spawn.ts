@@ -1,7 +1,7 @@
 import { getSelectedText, showToast, Toast, unstable_AI, getSelectedFinderItems, showHUD } from "@raycast/api";
 
-import { supabase } from "./supabase";
-import { isUrl, uploadImage } from "./utils";
+import { supabase } from "@/supabase";
+import { isUrl, uploadImage } from "@/utils";
 
 async function insertParticle(userId: string, options: { title: string; content: string }) {
   const { error } = await supabase.from("particle").insert({

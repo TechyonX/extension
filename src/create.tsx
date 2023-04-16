@@ -3,11 +3,11 @@ import { Action, ActionPanel, Form, Toast, showToast, unstable_AI, useNavigation
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
 
-import { supabase } from "./supabase";
-import { useDB } from "./hooks";
-import { Login } from "./login";
-import { ParticleValues, Type, TypeName } from "./types";
-import { getTypeIcon, isUrl, uploadImage } from "./utils";
+import { useDB } from "@/hooks";
+import { Login } from "@/login";
+import { supabase } from "@/supabase";
+import { ParticleValues, Type, TypeName } from "@/types";
+import { getTypeIcon, isUrl, uploadImage } from "@/utils";
 
 function FormContent({ type, props }: { type?: TypeName; props?: any }) {
   const extendedProps = { id: "content", title: "Content", ...props };

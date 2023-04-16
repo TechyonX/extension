@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { showToast, Toast } from "@raycast/api";
-import { PostgrestError, User } from "@supabase/supabase-js";
-import { supabase } from "./supabase";
-import { useCachedState } from "@raycast/utils";
 import { Crypto } from "@peculiar/webcrypto";
+import { showToast, Toast } from "@raycast/api";
+import { useCachedState } from "@raycast/utils";
+import { PostgrestError, User } from "@supabase/supabase-js";
+
+import { supabase } from "@/supabase";
 
 const crypto = new Crypto();
 global.crypto = crypto;

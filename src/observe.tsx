@@ -11,15 +11,15 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-
-import { Create } from "./create";
-import { supabase } from "./supabase";
-import { useAuth, useDB } from "./hooks";
-import { Login } from "./login";
-import { Particle, Type } from "./types";
-import { getTypeIcon } from "./utils";
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
+
+import { Create } from "@/create";
+import { useAuth, useDB } from "@/hooks";
+import { Login } from "@/login";
+import { supabase } from "@/supabase";
+import { Particle, Type } from "@/types";
+import { getTypeIcon } from "@/utils";
 
 const DEFAULT_CATEGORY = "null";
 

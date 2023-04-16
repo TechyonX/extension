@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Action, ActionPanel, Form } from "@raycast/api";
-
-import { useAuth } from "./hooks";
 import { useCachedState } from "@raycast/utils";
+
+import { useAuth } from "@/hooks";
 
 export function Login() {
   const [emailSent] = useCachedState<boolean>("@emailSent");

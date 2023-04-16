@@ -1,12 +1,12 @@
+import mime from "mime-types";
 import crypto from "node:crypto";
 import { lstatSync, readFileSync } from "node:fs";
 import { basename, extname } from "node:path";
 import { Icon, Image } from "@raycast/api";
 import { getFavicon } from "@raycast/utils";
-import mime from "mime-types";
 
-import { TypeID } from "./types";
-import { supabase } from "./supabase";
+import { supabase } from "@/supabase";
+import { TypeID } from "@/types";
 
 export function getTypeIcon(type: TypeID, content?: string) {
   switch (type) {
