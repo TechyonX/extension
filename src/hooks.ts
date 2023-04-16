@@ -1,8 +1,10 @@
+import crypto from "node:crypto";
 import { useEffect, useState } from "react";
 import { OAuth, showToast, Toast } from "@raycast/api";
 import { PostgrestError, User } from "@supabase/supabase-js";
-
 import { supabase } from "./supabase";
+
+global.crypto = crypto;
 
 const google = new OAuth.PKCEClient({
   redirectMethod: OAuth.RedirectMethod.Web,
@@ -12,19 +14,45 @@ const google = new OAuth.PKCEClient({
   description: "Connect your Google account",
 });
 
+const clientId = "1045722940985-2o9h3tki5ekcaf0pd249r7cssk9b7dtm.apps.googleusercontent.com";
+const scopes = "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
+
 export async function authorize() {
   try {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: "https://raycast.com/redirect/extension",
-        scopes: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
         skipBrowserRedirect: true,
+        scopes,
       },
     });
-    console.log(data.url);
+
+    const authRequest = await google.authorizationRequest({
+      endpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+      clientId,
+      scope: scopes,
+    });
+
+    console.log(data?.url);
+    console.log(authRequest.toURL());
+
+    const url = data?.url ? new URL(data.url) : undefined;
+    const authURL = new URL(authRequest.toURL());
+    const challenge = url?.searchParams.get("code_challenge");
+    const method = url?.searchParams.get("code_challenge_method");
+    const raycastURI = authURL.searchParams.get("redirect_uri");
+
+    if (challenge && method && raycastURI) {
+      authURL.searchParams.set("code_challenge", challenge);
+      authURL.searchParams.set("code_challenge_method", method.toUpperCase());
+      authURL.searchParams.set("redirect_to", raycastURI);
+      authURL.searchParams.set("redirect_uri", "https://hpiywkenufslzbcpcijs.supabase.co/auth/v1/callback");
+    }
+
     if (error) throw error;
-    const { authorizationCode } = await google.authorize({ url: data.url });
+    const { authorizationCode } = await google.authorize({ url: authURL.toString() });
+    // const { authorizationCode } = await google.authorize(authRequest);
     return authorizationCode;
   } catch (error) {
     console.log(error);
