@@ -1,5 +1,7 @@
 <div style="text-align: center;">
- <img width="100" src="assets/particle@dark.png">
+  <p align="center">
+    <img width="100" src="assets/particle@dark.png">
+  </p>
 </div>
 
 <br>
@@ -38,5 +40,5 @@ Make it observable publicly, or keep them private – your choice. If you do not
 <br>
 
 <div style="text-align: center;">
-  Crafted with &nbsp; 💚 &nbsp; by <a href="https://github.com/techyonx">Techyon</a>
+  <p align="center">Crafted with &nbsp; 💚 &nbsp; by <a href="https://github.com/techyonx">Techyon</a></p>
 </div>
