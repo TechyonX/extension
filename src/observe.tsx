@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { Action, ActionPanel, Alert, Color, Icon, List, Toast, confirmAlert, showToast } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Alert,
+  Color,
+  Icon,
+  List,
+  Toast,
+  confirmAlert,
+  showToast,
+  useNavigation,
+} from "@raycast/api";
 
 import { Create } from "./create";
 import { supabase } from "./supabase";
@@ -164,14 +175,7 @@ function Particles() {
                           primaryAction: { title: "Logout", style: Alert.ActionStyle.Destructive },
                         })
                       ) {
-                        const toast = await showToast({
-                          style: Toast.Style.Animated,
-                          title: "Logging out...",
-                        });
-
                         await logout();
-                        toast.style = Toast.Style.Success;
-                        toast.title = "Logged out";
                       }
                     }}
                   />
@@ -179,7 +183,30 @@ function Particles() {
                     icon={Icon.Trash}
                     title="Destroy Particle"
                     shortcut={{ modifiers: ["ctrl"], key: "x" }}
-                    onAction={async () => await logout()}
+                    onAction={async () => {
+                      if (
+                        await confirmAlert({
+                          title: `Destroy Particle`,
+                          message:
+                            "The fate of the universe may depend on this particular particle you are about to destroy. Should we procedd?",
+                          primaryAction: { title: "Destroy", style: Alert.ActionStyle.Destructive },
+                        })
+                      ) {
+                        const toast = await showToast({
+                          style: Toast.Style.Animated,
+                          title: "Destroying particle...",
+                        });
+                        const { error } = await supabase.from("particle").delete().eq("id", particle.id);
+                        mutate();
+                        if (!error) {
+                          toast.style = Toast.Style.Success;
+                          toast.title = "Particle destroyed";
+                        } else {
+                          toast.style = Toast.Style.Failure;
+                          toast.title = error?.message || "Could not destroy particle";
+                        }
+                      }
+                    }}
                   />
                 </ActionPanel>
               }
