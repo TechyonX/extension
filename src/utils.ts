@@ -6,7 +6,7 @@ import { getFavicon } from "@raycast/utils";
 import mime from "mime-types";
 
 import { TypeID } from "./types";
-import { supabase } from "./client";
+import { supabase } from "./supabase";
 
 export function getTypeIcon(type: TypeID, content?: string) {
   switch (type) {

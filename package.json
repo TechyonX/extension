@@ -32,7 +32,7 @@
   "dependencies": {
     "@raycast/api": "^1.49.2",
     "@raycast/utils": "^1.5.2",
-    "@supabase/supabase-js": "^2.15.0",
+    "@supabase/supabase-js": "^2.20.0",
     "mime-types": "^2.1.35"
   },
   "devDependencies": {

@@ -11,15 +11,15 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { useCachedState } from "@raycast/utils";
-import { User } from "@supabase/supabase-js";
 
-import { supabase } from "./client";
 import { Create } from "./create";
-import { useDB } from "./hooks";
+import { supabase } from "./supabase";
+import { useAuth, useDB } from "./hooks";
 import { Login } from "./login";
 import { Particle, Type } from "./types";
 import { getTypeIcon } from "./utils";
+import { useCachedState } from "@raycast/utils";
+import { User } from "@supabase/supabase-js";
 
 const DEFAULT_CATEGORY = "null";
 
@@ -45,6 +45,7 @@ function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }
 }
 
 function Particles() {
+  const { logout } = useAuth();
   const [type, setType] = useState<string>(DEFAULT_CATEGORY);
   const { data, isLoading, mutate } = useDB<Particle[]>("particle", { orderBy: "updated_at", ascending: false });
   const { push } = useNavigation();
@@ -163,6 +164,22 @@ function Particles() {
                   />
                   <ActionPanel.Section />
                   <Action
+                    icon={Icon.Logout}
+                    title="Logout"
+                    shortcut={{ modifiers: ["ctrl"], key: "q" }}
+                    onAction={async () => {
+                      if (
+                        await confirmAlert({
+                          title: `Logout`,
+                          message: "You are about to logout. Should we procedd?",
+                          primaryAction: { title: "Logout", style: Alert.ActionStyle.Destructive },
+                        })
+                      ) {
+                        await logout();
+                      }
+                    }}
+                  />
+                  <Action
                     icon={Icon.Trash}
                     title="Destroy Particle"
                     shortcut={{ modifiers: ["ctrl"], key: "x" }}
@@ -201,7 +218,7 @@ function Particles() {
 }
 
 export default function Observe() {
-  const [user] = useCachedState<User>("@user");
+  const [data] = useCachedState<User>("@user");
 
-  return user?.aud === "authenticated" ? <Particles /> : <Login />;
+  return data?.aud === "authenticated" ? <Particles /> : <Login />;
 }

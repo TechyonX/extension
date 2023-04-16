@@ -3,7 +3,7 @@ import { Action, ActionPanel, Form, Toast, showToast, unstable_AI, useNavigation
 import { useCachedState } from "@raycast/utils";
 import { User } from "@supabase/supabase-js";
 
-import { supabase } from "./client";
+import { supabase } from "./supabase";
 import { useDB } from "./hooks";
 import { Login } from "./login";
 import { ParticleValues, Type, TypeName } from "./types";

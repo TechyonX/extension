@@ -1,28 +1,53 @@
 import { useEffect, useState } from "react";
-import { Toast, showToast } from "@raycast/api";
-import { useCachedState } from "@raycast/utils";
+import { showToast, Toast } from "@raycast/api";
 import { PostgrestError, User } from "@supabase/supabase-js";
-import { supabase } from "./client";
+import { supabase } from "./supabase";
+import { useCachedState } from "@raycast/utils";
+
+import crypto from "node:crypto";
+global.crypto = crypto;
 
 export function useAuth() {
   const [data, setData] = useCachedState<User>("@user");
+  const [emailSent, setEmailSent] = useCachedState<boolean>("@emailSent");
 
-  async function login(email: string, password: string) {
+  async function getOTP(email: string) {
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Sending magic link...",
+    });
+
+    const res = !emailSent ? await supabase.auth.signInWithOtp({ email }) : { data: null, error: null };
+
+    if (res?.error) {
+      setData(undefined);
+      toast.style = Toast.Style.Failure;
+      toast.title = res.error?.message || "Could not send a magic link";
+      return setEmailSent(false);
+    } else {
+      toast.style = Toast.Style.Success;
+      toast.title = "Magic link is sent";
+      return setEmailSent(true);
+    }
+  }
+
+  async function login(email: string, otp: string) {
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: "Signing in...",
     });
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await supabase.auth.verifyOtp({ email, token: otp, type: "magiclink" });
 
-    if (data.session && data.user) {
-      setData(data.user);
+    if (res?.data.session && res?.data.user) {
+      setData(res.data.user);
+      setEmailSent(false);
       toast.style = Toast.Style.Success;
       toast.title = "Signed in";
     } else {
       setData(undefined);
       toast.style = Toast.Style.Failure;
-      toast.title = error?.message || "Invalid login credentials";
+      toast.title = res?.error?.message || "Could not log in to Particle";
     }
   }
 
@@ -36,6 +61,7 @@ export function useAuth() {
 
     if (!error) {
       setData(undefined);
+      setEmailSent(undefined);
       toast.style = Toast.Style.Success;
       toast.title = "Signed out";
     } else {
@@ -44,7 +70,7 @@ export function useAuth() {
     }
   }
 
-  return { login, logout, data };
+  return { getOTP, login, logout, data };
 }
 
 export function useDB<T>(relation: string, options?: any) {
