@@ -37,6 +37,14 @@ Make it observable publicly, or keep them private – your choice. If you do not
 ![](metadata/particle-4.png)
 
 <br>
+
+## 🏷️ Tag your particles
+
+Simplicity is better than complexity. You don’t need complicated categories and filters - use tags instead.
+
+![](metadata/particle-5.png)
+
+<br>
 <br>
 
 <div style="text-align: center;">
