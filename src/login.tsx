@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Action, ActionPanel, Form } from "@raycast/api";
+import { Action, ActionPanel, Form, Icon } from "@raycast/api";
 import { useCachedState } from "@raycast/utils";
 
 import { useAuth } from "@/hooks";
@@ -12,18 +12,12 @@ export function Login() {
 
   const { getOTP, login } = useAuth();
 
-  function dropNameErrorIfNeeded(value?: string) {
-    setEmail(value);
-    if (emailError && emailError.length > 0) {
-      setEmailError(undefined);
-    }
-  }
-
   return (
     <Form
       actions={
         <ActionPanel>
           <Action.SubmitForm
+            icon={Icon.Envelope}
             title={emailSent ? "Sign In" : "Send Magic Link"}
             onSubmit={async () =>
               email
@@ -45,12 +39,15 @@ export function Login() {
           placeholder="Enter email address"
           value={email}
           error={emailError}
-          onChange={dropNameErrorIfNeeded}
+          onChange={(newValue) => {
+            if (newValue.length > 0) setEmail(undefined);
+            setEmail(newValue);
+          }}
           onBlur={(event) => {
             if (event.target.value?.length == 0) {
               setEmailError("The field should't be empty!");
             } else {
-              dropNameErrorIfNeeded(event.target.value);
+              setEmailError(undefined);
             }
           }}
         />
