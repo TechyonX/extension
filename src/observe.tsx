@@ -232,6 +232,7 @@ function Particles() {
                                 user_id: user?.id,
                               })
                               .select();
+                            setNewTag(undefined);
 
                             if (!data?.length && insertTag) {
                               toast.style = Toast.Style.Failure;
