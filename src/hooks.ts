@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Crypto } from "@peculiar/webcrypto";
-import { LocalStorage, showToast, Toast } from "@raycast/api";
+import { getPreferenceValues, LocalStorage, showToast, Toast } from "@raycast/api";
 import { useCachedPromise, usePromise } from "@raycast/utils";
 import { isAuthError } from "@supabase/supabase-js";
 
@@ -90,9 +90,12 @@ export function useParticles() {
     const { data: sessionData } = await supabase.auth.getSession();
     const { data, error } = await supabase
       .from("particle")
-      .select()
+      .select(
+        "id, type, content, description, title, is_public, is_archived, created_at, updated_at, particle_tag(tag(id, name, color))"
+      )
       .eq("user_id", sessionData.session?.user.id)
       .eq("is_trashed", false)
+      .eq("is_archived", getPreferenceValues().listArchvedParticles)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -120,5 +123,26 @@ export function useTypes() {
     typesError: error,
     typesLoading: isLoading,
     typesRevalidate: revalidate,
+  };
+}
+
+export function useTags() {
+  const { data, error, isLoading, revalidate } = usePromise(async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const { data, error } = await supabase
+      .from("tag")
+      .select("id, name, color")
+      .eq("user_id", sessionData.session?.user.id)
+      .order("id", { ascending: true });
+
+    if (error) throw error;
+    return data;
+  });
+
+  return {
+    tags: data,
+    tagsError: error,
+    tagsLoading: isLoading,
+    tagsRevalidate: revalidate,
   };
 }

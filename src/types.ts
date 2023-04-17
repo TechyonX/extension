@@ -1,6 +1,13 @@
 export type TypeName = "Link" | "Image" | "Text";
 export type TypeID = 1 | 2 | 3;
 
+export type Tag = {
+  id: string;
+  name: string;
+  color?: string;
+  emoji?: string;
+};
+
 export type Type = {
   id: TypeID;
   name: TypeName;

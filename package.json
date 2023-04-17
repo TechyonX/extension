@@ -29,6 +29,16 @@
       "icon": "particle.png"
     }
   ],
+  "preferences": [
+    {
+      "name": "listArchvedParticles",
+      "type": "checkbox",
+      "default": false,
+      "label": "Include archived particles in the list",
+      "description": "Whether or not the archived particles will be included in the list",
+      "required": false
+    }
+  ],
   "dependencies": {
     "@peculiar/webcrypto": "^1.4.3",
     "@raycast/api": "^1.49.2",
