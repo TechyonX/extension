@@ -88,15 +88,17 @@ export function useAuth() {
 export function useParticles() {
   const { data, error, isLoading, revalidate } = usePromise(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
-    const { data, error } = await supabase
+
+    let query = supabase
       .from("particle")
       .select(
         "id, type, content, description, title, is_public, is_archived, created_at, updated_at, particle_tag(tag(id, name, color))"
       )
       .eq("user_id", sessionData.session?.user.id)
       .eq("is_trashed", false)
-      .eq("is_archived", getPreferenceValues().listArchvedParticles)
       .order("created_at", { ascending: false });
+    if (!getPreferenceValues().listArchvedParticles) query = query.eq("is_archived", false);
+    const { data, error } = await query;
 
     if (error) throw error;
     return data;
