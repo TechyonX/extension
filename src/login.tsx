@@ -5,12 +5,11 @@ import { useCachedState } from "@raycast/utils";
 import { useAuth } from "@/hooks";
 
 export function Login() {
-  const [emailSent] = useCachedState<boolean>("@emailSent");
   const [email, setEmail] = useCachedState<string>("@email");
   const [otp, setOTP] = useState<string>("");
   const [emailError, setEmailError] = useState<string | undefined>();
 
-  const { getOTP, login } = useAuth();
+  const { otpSent, sendOTP, login } = useAuth();
 
   return (
     <Form
@@ -18,19 +17,19 @@ export function Login() {
         <ActionPanel>
           <Action.SubmitForm
             icon={Icon.Envelope}
-            title={emailSent ? "Sign In" : "Send Magic Link"}
+            title={otpSent ? "Sign In" : "Send Magic Link"}
             onSubmit={async () =>
               email
-                ? emailSent
+                ? otpSent
                   ? await login(email, otp)
-                  : await getOTP(email)
+                  : await sendOTP(email)
                 : setEmailError("The field shouldn't be empty!")
             }
           />
         </ActionPanel>
       }
     >
-      {emailSent ? (
+      {otpSent ? (
         <Form.TextField autoFocus id="otp" title="OTP" placeholder="Enter OTP" value={otp} onChange={setOTP} />
       ) : (
         <Form.TextField

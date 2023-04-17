@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { Action, ActionPanel, Form, Toast, showToast, unstable_AI, useNavigation } from "@raycast/api";
-import { useCachedState } from "@raycast/utils";
-import { User } from "@supabase/supabase-js";
 
-import { useDB } from "@/hooks";
+import { useAuth, useTypes } from "@/hooks";
 import { Login } from "@/login";
 import { supabase } from "@/supabase";
-import { ParticleValues, Type, TypeName } from "@/types";
+import { ParticleValues, TypeName } from "@/types";
 import { getTypeIcon, isUrl, uploadImage } from "@/utils";
 
 function FormContent({ type, props }: { type?: TypeName; props?: any }) {
@@ -24,10 +22,10 @@ function FormContent({ type, props }: { type?: TypeName; props?: any }) {
 }
 
 export function Create() {
-  const [user] = useCachedState<User>("@user");
+  const { user, error: userError } = useAuth();
   const [contentError, setContentError] = useState<string>();
   const [selectedType, setSelectedType] = useState<string>();
-  const { data, error, isLoading } = useDB<Type[]>("type");
+  const { types, typesError, typesLoading } = useTypes();
   const { pop } = useNavigation();
 
   function dropContentErrorIfNeeded() {
@@ -107,7 +105,7 @@ export function Create() {
     }
   }
 
-  if (error) return <Login />;
+  if (userError || typesError) return <Login />;
   return (
     <Form
       actions={
@@ -115,16 +113,16 @@ export function Create() {
           <Action.SubmitForm title="Spawn Particle" onSubmit={onSubmit} />
         </ActionPanel>
       }
-      isLoading={isLoading}
+      isLoading={typesLoading}
     >
       <Form.Dropdown id="type" title="Type" value={selectedType} onChange={setSelectedType} isLoading>
-        {data?.map((type) => (
+        {types?.map((type) => (
           <Form.Dropdown.Item key={type.id} value={type.id.toString()} title={type.name} icon={getTypeIcon(type.id)} />
         ))}
       </Form.Dropdown>
       {selectedType ? (
         <FormContent
-          type={data?.find((type) => type.id === parseInt(selectedType))?.name}
+          type={types?.find((type) => type.id === parseInt(selectedType))?.name}
           props={{ error: contentError, onChange: dropContentErrorIfNeeded, onBlur: contentErrorValidation }}
         />
       ) : null}

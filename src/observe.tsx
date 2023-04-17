@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Action,
   ActionPanel,
@@ -11,27 +11,24 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
-import { useCachedState } from "@raycast/utils";
-import { User } from "@supabase/supabase-js";
 
 import { Create } from "@/create";
-import { useAuth, useDB } from "@/hooks";
+import { useAuth, useParticles, useTypes } from "@/hooks";
 import { Login } from "@/login";
 import { supabase } from "@/supabase";
-import { Particle, Type } from "@/types";
 import { getTypeIcon } from "@/utils";
 
 const DEFAULT_CATEGORY = "null";
 
 function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }) {
-  const { data, isLoading } = useDB<Type[]>("type");
+  const { types, typesLoading } = useTypes();
 
-  return !isLoading ? (
+  return !typesLoading ? (
     <List.Dropdown defaultValue={DEFAULT_CATEGORY} onChange={onTypeChange} tooltip="Select Category" storeValue>
       <List.Dropdown.Item key={"0"} icon={Icon.AppWindowGrid3x3} title="All types" value={DEFAULT_CATEGORY} />
       <List.Dropdown.Section>
-        {data?.length &&
-          data.map((type) => (
+        {types?.length &&
+          types.map((type) => (
             <List.Dropdown.Item
               key={type.id}
               icon={getTypeIcon(type.id)}
@@ -47,19 +44,20 @@ function Types({ onTypeChange }: { onTypeChange: (changedType: string) => void }
 function Particles() {
   const { logout } = useAuth();
   const [type, setType] = useState<string>(DEFAULT_CATEGORY);
-  const { data, isLoading, mutate } = useDB<Particle[]>("particle", { orderBy: "updated_at", ascending: false });
+  const { particles, particlesLoading, particlesRevalidate } = useParticles();
   const { push } = useNavigation();
 
-  const typeParticles = type === DEFAULT_CATEGORY ? data : data?.filter((particle) => particle.type === parseInt(type));
+  const typeParticles =
+    type === DEFAULT_CATEGORY ? particles : particles?.filter((particle) => particle.type === parseInt(type));
 
   function onTypeChange(newCategory: string) {
     type !== newCategory && setType(newCategory);
   }
 
   return (
-    <List searchBarAccessory={<Types onTypeChange={onTypeChange} />} isLoading={isLoading} isShowingDetail>
+    <List searchBarAccessory={<Types onTypeChange={onTypeChange} />} isLoading={particlesLoading} isShowingDetail>
       <List.EmptyView title="No particle exists" description="Any particles you have created will be listed here." />
-      <List.Section title="Particles" subtitle={`${data?.length}`}>
+      <List.Section title="Particles" subtitle={`${particles?.length}`}>
         {typeParticles?.length &&
           typeParticles.map((particle) => (
             <List.Item
@@ -117,7 +115,7 @@ function Particles() {
                         .from("particle")
                         .update({ is_public: !particle.is_public })
                         .eq("id", particle.id);
-                      mutate();
+                      particlesRevalidate();
                       if (!error) {
                         toast.style = Toast.Style.Success;
                         toast.title = `Particle ${particle.is_public ? "is private" : "is public"}`;
@@ -140,7 +138,7 @@ function Particles() {
                         .from("particle")
                         .update({ is_archived: !particle.is_archived })
                         .eq("id", particle.id);
-                      mutate();
+                      particlesRevalidate();
                       if (!error) {
                         toast.style = Toast.Style.Success;
                         toast.title = `Particle ${particle.is_archived ? "is listed" : "is archived"}`;
@@ -164,22 +162,6 @@ function Particles() {
                   />
                   <ActionPanel.Section />
                   <Action
-                    icon={Icon.Logout}
-                    title="Logout"
-                    shortcut={{ modifiers: ["ctrl"], key: "q" }}
-                    onAction={async () => {
-                      if (
-                        await confirmAlert({
-                          title: `Logout`,
-                          message: "You are about to logout. Should we procedd?",
-                          primaryAction: { title: "Logout", style: Alert.ActionStyle.Destructive },
-                        })
-                      ) {
-                        await logout();
-                      }
-                    }}
-                  />
-                  <Action
                     icon={Icon.Trash}
                     title="Destroy Particle"
                     shortcut={{ modifiers: ["ctrl"], key: "x" }}
@@ -197,7 +179,8 @@ function Particles() {
                           title: "Destroying particle...",
                         });
                         const { error } = await supabase.from("particle").delete().eq("id", particle.id);
-                        mutate();
+                        particlesRevalidate();
+
                         if (!error) {
                           toast.style = Toast.Style.Success;
                           toast.title = "Particle destroyed";
@@ -205,6 +188,22 @@ function Particles() {
                           toast.style = Toast.Style.Failure;
                           toast.title = error?.message || "Could not destroy particle";
                         }
+                      }
+                    }}
+                  />
+                  <Action
+                    icon={Icon.Logout}
+                    title="Logout"
+                    shortcut={{ modifiers: ["ctrl"], key: "q" }}
+                    onAction={async () => {
+                      if (
+                        await confirmAlert({
+                          title: `Logout`,
+                          message: "You are about to logout. Should we procedd?",
+                          primaryAction: { title: "Logout", style: Alert.ActionStyle.Destructive },
+                        })
+                      ) {
+                        await logout();
                       }
                     }}
                   />
@@ -218,7 +217,7 @@ function Particles() {
 }
 
 export default function Observe() {
-  const [data] = useCachedState<User>("@user");
+  const { user } = useAuth();
 
-  return data?.aud === "authenticated" ? <Particles /> : <Login />;
+  return user?.aud === "authenticated" ? <Particles /> : <Login />;
 }

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Crypto } from "@peculiar/webcrypto";
-import { showToast, Toast } from "@raycast/api";
-import { useCachedState } from "@raycast/utils";
-import { PostgrestError, User } from "@supabase/supabase-js";
+import { LocalStorage, showToast, Toast } from "@raycast/api";
+import { useCachedPromise, usePromise } from "@raycast/utils";
+import { isAuthError } from "@supabase/supabase-js";
 
 import { supabase } from "@/supabase";
 
@@ -10,26 +10,37 @@ const crypto = new Crypto();
 global.crypto = crypto;
 
 export function useAuth() {
-  const [data, setData] = useCachedState<User>("@user");
-  const [emailSent, setEmailSent] = useCachedState<boolean>("@emailSent");
+  const [otpSent, setOTPSent] = useState<boolean>();
 
-  async function getOTP(email: string) {
+  const { data, error, isLoading, revalidate } = useCachedPromise(async () => {
+    const res = await supabase.auth.getUser();
+    return res.data.user;
+  });
+
+  async function sendOTP(email: string) {
     const toast = await showToast({
       style: Toast.Style.Animated,
       title: "Sending magic link...",
     });
 
-    const res = !emailSent ? await supabase.auth.signInWithOtp({ email }) : { data: null, error: null };
+    if (otpSent) {
+      toast.style = Toast.Style.Success;
+      toast.title = "Magic link is sent. Please check your email.";
+      return;
+    }
 
-    if (res?.error) {
-      setData(undefined);
+    const res = await supabase.auth.signInWithOtp({ email });
+    revalidate();
+
+    if (res.error) {
       toast.style = Toast.Style.Failure;
       toast.title = res.error?.message || "Could not send a magic link";
-      return setEmailSent(false);
-    } else {
+      return setOTPSent(false);
+    }
+    if (res.data) {
       toast.style = Toast.Style.Success;
       toast.title = "Magic link is sent";
-      return setEmailSent(true);
+      return setOTPSent(true);
     }
   }
 
@@ -40,14 +51,14 @@ export function useAuth() {
     });
 
     const res = await supabase.auth.verifyOtp({ email, token: otp, type: "magiclink" });
+    revalidate();
 
-    if (res?.data.session && res?.data.user) {
-      setData(res.data.user);
-      setEmailSent(false);
+    if (res.data.user && res.data.user.aud === "authenticated") {
       toast.style = Toast.Style.Success;
       toast.title = "Signed in";
-    } else {
-      setData(undefined);
+    }
+
+    if (res.error && isAuthError(res.error)) {
       toast.style = Toast.Style.Failure;
       toast.title = res?.error?.message || "Could not log in to Particle";
     }
@@ -60,10 +71,9 @@ export function useAuth() {
     });
 
     const { error } = await supabase.auth.signOut();
+    await LocalStorage.clear();
 
     if (!error) {
-      setData(undefined);
-      setEmailSent(undefined);
       toast.style = Toast.Style.Success;
       toast.title = "Signed out";
     } else {
@@ -72,33 +82,43 @@ export function useAuth() {
     }
   }
 
-  return { getOTP, login, logout, data };
+  return { user: data, error, isLoading, otpSent, sendOTP, login, logout };
 }
 
-export function useDB<T>(relation: string, options?: any) {
-  const { orderBy, ascending } = options || { orderBy: "id", ascending: true };
-  const [data, setData] = useState<T>();
-  const [error, setError] = useState<PostgrestError>();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export function useParticles() {
+  const { data, error, isLoading, revalidate } = usePromise(async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const { data, error } = await supabase
+      .from("particle")
+      .select()
+      .eq("user_id", sessionData.session?.user.id)
+      .eq("is_trashed", false)
+      .order("created_at", { ascending: false });
 
-  async function fetch() {
-    setIsLoading(true);
-    const { data, error } = await supabase.from(relation).select().order(orderBy, { ascending });
+    if (error) throw error;
+    return data;
+  });
 
-    if (data) setData(data as T);
-    if (error) setError(error);
-    setIsLoading(false);
-  }
+  return {
+    particles: data,
+    particlesError: error,
+    particlesLoading: isLoading,
+    particlesRevalidate: revalidate,
+  };
+}
 
-  useEffect(() => {
-    let ignore = false;
+export function useTypes() {
+  const { data, error, isLoading, revalidate } = usePromise(async () => {
+    const { data, error } = await supabase.from("type").select().order("id", { ascending: true });
 
-    if (!ignore) fetch();
+    if (error) throw error;
+    return data;
+  });
 
-    return () => {
-      ignore = true;
-    };
-  }, [relation]);
-
-  return { data, error, isLoading, mutate: fetch };
+  return {
+    types: data,
+    typesError: error,
+    typesLoading: isLoading,
+    typesRevalidate: revalidate,
+  };
 }
