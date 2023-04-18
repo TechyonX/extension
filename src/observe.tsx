@@ -104,14 +104,16 @@ function Particles() {
                             target={particle.content}
                             text={particle?.title || "Open Link"}
                           />
-                        ) : null}
-                        {particle.type === 2 ? (
+                        ) : particle.type === 2 ? (
                           <List.Item.Detail.Metadata.Link
                             title="Image"
                             target={supabase.storage.from("media").getPublicUrl(particle.content).data.publicUrl}
                             text={particle?.title || "View Image"}
                           />
-                        ) : null}
+                        ) : (
+                          <List.Item.Detail.Metadata.Label title="Description" text={particle.description} />
+                        )}
+                        <List.Item.Detail.Metadata.Separator />
                         <List.Item.Detail.Metadata.Label
                           title="Visibility"
                           icon={{
@@ -128,6 +130,7 @@ function Particles() {
                           }}
                           text={particle.is_archived ? "Archived item" : "Listed item"}
                         />
+                        <List.Item.Detail.Metadata.Separator />
                         <List.Item.Detail.Metadata.Label
                           title="Created at"
                           icon={Icon.Calendar}
@@ -138,18 +141,20 @@ function Particles() {
                           icon={Icon.Calendar}
                           text={new Date(particle.updated_at).toLocaleString()}
                         />
-
-                        {Array.isArray(particle?.particle_tag) && !!particle?.particle_tag.length ? (
-                          <List.Item.Detail.Metadata.TagList title="Tag">
-                            {(particle.particle_tag as { tag: Tag }[]).map(({ tag }) => (
+                        <List.Item.Detail.Metadata.Separator />
+                        <List.Item.Detail.Metadata.TagList title="Tag">
+                          {Array.isArray(particle?.particle_tag) && !!particle?.particle_tag.length ? (
+                            (particle.particle_tag as { tag: Tag }[]).map(({ tag }) => (
                               <List.Item.Detail.Metadata.TagList.Item
                                 key={tag.id}
                                 text={`#${tag.name}`}
                                 color={tag.color}
                               />
-                            ))}
-                          </List.Item.Detail.Metadata.TagList>
-                        ) : null}
+                            ))
+                          ) : (
+                            <List.Item.Detail.Metadata.TagList.Item text={`No tags`} color={Color.SecondaryText} />
+                          )}
+                        </List.Item.Detail.Metadata.TagList>
                       </List.Item.Detail.Metadata>
                     }
                   />
